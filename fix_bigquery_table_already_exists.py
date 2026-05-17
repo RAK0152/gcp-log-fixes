@@ -1,39 +1,38 @@
-from google.cloud import bigquery
-from google.api_core.exceptions import NotFound
 
-def fix_bigquery_table_already_exists(project_id, dataset_id, table_id, schema):
+from google.cloud import bigquery
+from google.cloud.exceptions import Conflict
+
+def create_bigquery_table_if_not_exists(project_id, dataset_id, table_id, schema):
     """
-    Checks if a BigQuery table exists, and creates it if it does not.
+    Creates a BigQuery table if it does not already exist.
+
     Args:
         project_id (str): Your Google Cloud project ID.
-        dataset_id (str): Your BigQuery dataset ID.
-        table_id (str): Your BigQuery table ID.
-        schema (list): The schema of the table to be created, e.g.,
-                       [bigquery.SchemaField("column_name", "STRING", mode="NULLABLE")].
+        dataset_id (str): The ID of the dataset to create the table in.
+        table_id (str): The ID of the table to create.
+        schema (list): A list of bigquery.SchemaField objects defining the table schema.
     """
     client = bigquery.Client(project=project_id)
     table_ref = client.dataset(dataset_id).table(table_id)
+    table = bigquery.Table(table_ref, schema=schema)
 
     try:
-        client.get_table(table_ref)
-        print(f"Table {project_id}.{dataset_id}.{table_id} already exists. No action needed.")
-    except NotFound:
-        print(f"Table {project_id}.{dataset_id}.{table_id} does not exist. Creating table...")
-        table = bigquery.Table(table_ref, schema=schema)
-        table = client.create_table(table)
-        print(f"Table {project_id}.{dataset_id}.{table_id} created successfully.")
+        table = client.create_table(table)  # Make an API request.
+        print(f"Table {table.project}.{table.dataset_id}.{table.table_id} created.")
+    except Conflict:
+        print(f"Table {project_id}.{dataset_id}.{table_id} already exists. Skipping creation.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-# Example usage based on the provided log error:
-# This example extracts the project, dataset, table, and schema from the log.
 if __name__ == "__main__":
-    project_id = "ai-practice-388514"
-    dataset_id = "sap_data"
-    table_id = "purchase_orders"
+    # Example usage (replace with your actual project, dataset, table, and schema)
+    PROJECT_ID = "ai-practice-388514"  # Replace with your project ID
+    DATASET_ID = "sap_data"         # Replace with your dataset ID
+    TABLE_ID = "purchase_orders"    # Replace with your table ID
 
-    # Schema extracted from the log entry
-    schema = [
+    # Define your table schema based on the error message's schema snippet
+    # Note: This is a simplified schema, adapt to your full schema
+    SCHEMA = [
         bigquery.SchemaField("PurchaseOrder", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("PurchaseOrderType", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("PurchaseOrderDate", "STRING", mode="NULLABLE"),
@@ -42,12 +41,7 @@ if __name__ == "__main__":
         bigquery.SchemaField("CreatedByUser", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("CompanyCode", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("Supplier", "STRING", mode="NULLABLE"),
-        bigquery.SchemaField("InvoicingParty", "STRING", mode="NULLABLE"),
-        bigquery.SchemaField("PurchasingOrganization", "STRING", mode="NULLABLE"),
-        bigquery.SchemaField("PurchasingGroup", "STRING", mode="NULLABLE"),
-        # Note: The log entry was truncated. If there are more fields,
-        # they should be added here. This example assumes the provided part is complete
-        # or demonstrates how to add them.
+        # Add other fields as per your actual table schema
     ]
 
-    fix_bigquery_table_already_exists(project_id, dataset_id, table_id, schema)
+    create_bigquery_table_if_not_exists(PROJECT_ID, DATASET_ID, TABLE_ID, SCHEMA)
