@@ -1,41 +1,36 @@
 
 from google.cloud import bigquery
 
-def validate_bigquery_query(project_id: str, query: str, location: str = "US") -> bool:
+def validate_bigquery_query(project_id: str, query: str) -> bool:
     """
-    Validates a BigQuery SQL query by performing a dry run.
+    Validates a BigQuery SQL query without executing it.
 
     Args:
         project_id: Your Google Cloud project ID.
         query: The SQL query string to validate.
-        location: The geographic location of the BigQuery job (e.g., "US", "EU").
 
     Returns:
         True if the query is valid, False otherwise.
     """
-    client = bigquery.Client(project=project_id, location=location)
-
-    job_config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
-
+    client = bigquery.Client(project=project_id)
     try:
-        query_job = client.query(query, job_config=job_config)
-        print(f"Query validated successfully. This query will process {query_job.total_bytes_processed} bytes.")
+        # Dry run the query to validate it
+        job_config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
+        client.query(query, job_config=job_config)
+        print(f"Query is valid:\n{query}")
         return True
     except Exception as e:
-        print(f"Query validation failed: {e}")
+        print(f"Query is invalid:\n{query}\nError: {e}")
         return False
 
 if __name__ == "__main__":
-    # Example usage:
-    # Replace with your actual project ID and a query to test
-    your_project_id = "your-gcp-project-id"
-    valid_query = "SELECT COUNT(*) FROM `bigquery-public-data.usa_names.usa_1910_2013`"
-    invalid_query = "SELECT * FROM `non_existent_dataset.non_existent_table`"
+    # Replace with your project ID and a sample query
+    PROJECT_ID = "your-gcp-project-id"
+    VALID_QUERY = "SELECT * FROM `bigquery-public-data.usa_names.usa_1910_2013` LIMIT 10"
+    INVALID_QUERY = "SELECT * FROM `non-existent-project.non_existent_dataset.non_existent_table` LIMIT 10"
 
-    print("\n--- Testing valid query ---")
-    is_valid = validate_bigquery_query(your_project_id, valid_query)
-    print(f"Is valid: {is_valid}")
+    print("--- Validating a valid query ---")
+    validate_bigquery_query(PROJECT_ID, VALID_QUERY)
 
-    print("\n--- Testing invalid query ---")
-    is_invalid = validate_bigquery_query(your_project_id, invalid_query)
-    print(f"Is valid: {is_invalid}")
+    print("\n--- Validating an invalid query ---")
+    validate_bigquery_query(PROJECT_ID, INVALID_QUERY)
