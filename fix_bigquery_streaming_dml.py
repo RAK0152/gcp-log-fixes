@@ -1,5 +1,5 @@
 
-from google.cloud import bigqueryv1
+from google.cloud import bigquery
 
 def perform_batch_update_on_streaming_table(project_id, dataset_id, table_id, update_sql_logic, temp_table_suffix="_temp"):
     """
